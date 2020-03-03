@@ -42,6 +42,8 @@ public:
 	int i_NumFace;
 	vector<CNeperVertex> lv_NeperVertex;
 	vector<CNeperFace> lv_NeperFace;
+	void fFindPositionVertex(ifstream &infile_0);
+	void fFindPositionFace(ifstream &infile_0);
 	void fReadNeper_tess(string str_0);
 	void fWriteDDABlock_json(string str_0);
 	void fWriteDDABlock_vtp(string str_0);

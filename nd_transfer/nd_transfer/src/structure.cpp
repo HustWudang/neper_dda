@@ -1,5 +1,42 @@
 #include "structure.h"
 
+void NeperDDA::fFindPositionVertex(ifstream &infile_0)
+{
+	// find position vertex;
+	while (infile_0.good())
+	{
+		char line[256];
+		infile_0.getline(line, 256);
+		if (line[1] != '*') { continue; }
+		else if (line[2] != '*') { continue; }
+		else if (line[3] != 'v') { continue; }
+		else if (line[4] != 'e') { continue; }
+		else if (line[5] != 'r') { continue; }
+		else if (line[6] != 't') { continue; }
+		else if (line[7] != 'e') { continue; }
+		else if (line[8] != 'x') { continue; }
+		else {
+			return; 
+		}
+	}
+}
+
+void NeperDDA::fFindPositionFace(ifstream &infile_0)
+{
+	// find position face;
+	while (infile_0.good())
+	{
+		char line[256];
+		infile_0.getline(line, 256);
+		if (line[1] != '*') { continue; }
+		else if (line[2] != '*') { continue; }
+		else if (line[3] != 'f') { continue; }
+		else if (line[4] != 'a') { continue; }
+		else if (line[5] != 'c') { continue; }
+		else if (line[6] != 'e') { continue; }
+		else { return; }
+	}
+}
 
 void NeperDDA::fReadNeper_tess(string str_0)
 {
@@ -7,6 +44,8 @@ void NeperDDA::fReadNeper_tess(string str_0)
 	infile.open(str_0);
 	if (infile.is_open())
 	{
+		// find vertex position;
+		fFindPositionVertex(infile);
 		infile >> i_NumVertex;
 		for (int i_vertex = 0; i_vertex < i_NumVertex; i_vertex++)
 		{
@@ -14,6 +53,7 @@ void NeperDDA::fReadNeper_tess(string str_0)
 			infile >> nNeperVertex_t.i_No >> nNeperVertex_t.x >> nNeperVertex_t.y >> nNeperVertex_t.z >> nNeperVertex_t.i_state;
 			lv_NeperVertex.push_back(nNeperVertex_t);
 		}
+		fFindPositionFace(infile);
 		infile >> i_NumFace;
 		for (int i_face = 0; i_face < i_NumFace; i_face++)
 		{

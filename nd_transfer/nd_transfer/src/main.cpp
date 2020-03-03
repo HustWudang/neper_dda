@@ -19,9 +19,9 @@ int main()
 	cout << "-----\n";
 
 	NeperDDA mNeperDDA_1;
-	mNeperDDA_1.fReadNeper_tess("0.tess");
-	mNeperDDA_1.fWriteDDABlock_json("0_block.json");
-	mNeperDDA_1.fWriteDDABlock_vtp("0_block.vtp");
+	mNeperDDA_1.fReadNeper_tess("1.tess");
+	mNeperDDA_1.fWriteDDABlock_json("1_block.json");
+	mNeperDDA_1.fWriteDDABlock_vtp("1_block.vtp");
 	// [Main function return].
 	system("pause");
 	return 0;
