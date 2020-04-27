@@ -34,7 +34,7 @@ int main()
 {
 	// [Screen Reminder].
 	cout << "-----\n";
-	cout << " Transfer Gmsh file (1.msh) to DDA block file (block.json) ...\n";
+	cout << " Transfer Gmsh file (1.tess) to DDA block file (block.json) ...\n";
 	cout << "-----\n";
 	std::string sfin_base = fGetFileNamePathStringFromFileInRootPath("filename.txt");
 	std::string sfin_tess = sfin_base + ".tess";

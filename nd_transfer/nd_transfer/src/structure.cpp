@@ -61,11 +61,18 @@ void NeperDDA::fReadNeper_tess(string str_0)
 			CNeperFace nNeperFace_t;
 			infile >> nNeperFace_t.i_No;
 			infile >> nNeperFace_t.i_NumVertex;
+			// clockwise
+			vector<int> lv_VertexNo_clk;
 			for (int i_facevertex = 0; i_facevertex < nNeperFace_t.i_NumVertex; i_facevertex++)
 			{
 				int i_VertexNo_t;
 				infile >> i_VertexNo_t;
-				nNeperFace_t.lv_VertexNo.push_back(i_VertexNo_t);
+				lv_VertexNo_clk.push_back(i_VertexNo_t);
+			}
+			// anti-clockwise
+			for (int i_facevertex = 0; i_facevertex < nNeperFace_t.i_NumVertex; i_facevertex++)
+			{
+				nNeperFace_t.lv_VertexNo.push_back(lv_VertexNo_clk[nNeperFace_t.i_NumVertex-i_facevertex-1]);
 			}
 			// face edge.
 			infile >> nNeperFace_t.i_NumEdge;
