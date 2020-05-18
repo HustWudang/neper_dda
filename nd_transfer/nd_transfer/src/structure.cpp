@@ -97,6 +97,46 @@ void NeperDDA::fReadNeper_tess(string str_0)
 	}
 }
 
+void NeperDDA::fGenerateMaterialIndexFromInputFile(string str_0)
+{
+	ifstream infile;
+	infile.open(str_0);
+	if (infile.is_open())
+	{
+		// input material type;
+		int i_TotalMaterilType;
+		infile >> i_TotalMaterilType;
+		// load material type;
+		for (int i_type = 0; i_type < i_TotalMaterilType; i_type++)
+		{
+			CMaterialType ntMaterialType;
+			infile >> ntMaterialType.Index;
+			infile >> ntMaterialType.D;
+			infile >> ntMaterialType.E;
+			infile >> ntMaterialType.U;
+			infile >> ntMaterialType.Ratio;
+			lv_MaterialType.push_back(ntMaterialType);
+		}
+		// set index vector according to ratio;
+		i_NumFace = lv_NeperFace.size();
+		int i_NumSet = 0;
+		for (std::vector<CMaterialType>::iterator it_MT = lv_MaterialType.begin(); it_MT != lv_MaterialType.end(); it_MT++)
+		{
+			// obtain material associated grain number;
+			if ((it_MT + 1) == lv_MaterialType.end()) { it_MT->i_Num = i_NumFace - i_NumSet; }
+			else { it_MT->i_Num = floor(i_NumFace * it_MT->Ratio); }
+			i_NumSet += it_MT->i_Num;
+			// form index vector;
+			for (int i_sub = 0; i_sub < it_MT->i_Num; i_sub++) { lv_MaterialIndex.push_back(it_MT->Index); }
+		}
+		// shuffle index vector;
+		/*srand(time(NULL));
+		int seed = rand() % 100;
+		std::random_shuffle(lv_MaterialIndex.begin(), lv_MaterialIndex.end(), std::default_random_engine(seed));*/
+		std::random_shuffle(lv_MaterialIndex.begin(), lv_MaterialIndex.end());
+	}
+}
+
 
 void NeperDDA::fWriteDDABlock_json(string str_0)
 {
@@ -166,6 +206,75 @@ void NeperDDA::fWriteDDABlock_json(string str_0)
 	}
 }
 
+void NeperDDA::fWriteDDABlock_json_2(string str_0)
+{
+	ofstream of;
+	of.open(str_0);
+	if (of.is_open())
+	{
+		for (int i_face = 0; i_face < i_NumFace; i_face++)
+		{
+			/////////// ----- BEGIN -----
+			of << "{";
+			/////////// ----- id -----
+			of << "\"no\":" << i_face << ",";
+			/////////// ----- node number -----
+			of << "\"node_num\":" << lv_NeperFace[i_face].i_NumVertex << ",";
+			/// ----- edge number -----
+			of << "\"edge_num\":" << lv_NeperFace[i_face].i_NumEdge << ",";
+			/////////// ----- node coordinate list -----
+			of << "\"node_list\":";
+			of << "[";
+			for (int i_facevertex = 0; i_facevertex < lv_NeperFace[i_face].i_NumVertex - 1; i_facevertex++)
+			{
+				of << "[" << lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[i_facevertex] - 1].x << "," << lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[i_facevertex] - 1].y << "],";
+			}
+			of << "[" << lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[lv_NeperFace[i_face].i_NumVertex - 1] - 1].x << "," << lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[lv_NeperFace[i_face].i_NumVertex - 1] - 1].y << "]";
+			of << "]" << ",";
+			////////// ----- physical parameter -----
+			// Material Index
+			int m_index = lv_MaterialIndex[i_face];
+			of << "\"density\":" << lv_MaterialType[m_index - 1].D << ",";
+			of << "\"elastic_modulus\":" << lv_MaterialType[m_index - 1].E << ",";
+			of << "\"poisson_ratio\":" << lv_MaterialType[m_index - 1].U << ",";
+			of << "\"cohesion\":" << 1E6 << ",";
+			of << "\"friction_angle\":" << 45 << ",";
+			////////// ----- other conditions -----
+			of << "\"velo\":";
+			of << "[";
+			for (int ii = 0; ii < 5; ii++)
+			{
+				of << 0 << ",";
+			}
+			of << 0;
+			of << "]" << ",";
+			of << "\"stress\":";
+			of << "[";
+			for (int ii = 0; ii < 2; ii++)
+			{
+				of << 0 << ",";
+			}
+			of << 0;
+			of << "]" << ",";
+			of << "\"strain\":";
+			of << "[";
+			for (int ii = 0; ii < 2; ii++)
+			{
+				of << 0 << ",";
+			}
+			of << 0;
+			of << "]";
+			/////////// ----- END -----
+			of << "}\n";
+		}
+		of.close();
+		cout << "write otblock.json successfully ...\n";
+	}
+	else
+	{
+		cout << "[Error] cannot open otblock.json !\n";
+	}
+}
 
 void NeperDDA::fWriteDDABlock_vtp(string str_0)
 {
@@ -233,6 +342,128 @@ void NeperDDA::fWriteDDABlock_vtp(string str_0)
 			float f_a = 45;
 			of << f_a << " ";
 			of << "</DataArray>";
+			of << "<DataArray type=\"Float32\" Name=\"Stress\" NumberOfComponents=\"3\" format=\"ascii\">";
+			float stress_xx = 0;
+			float stress_yy = 0;
+			float stress_xy = 0;
+			of << stress_xx << " " << stress_yy << " " << stress_xy << " ";
+			of << "</DataArray>";
+			of << "<DataArray type=\"Float32\" Name=\"Strain\" NumberOfComponents=\"3\" format=\"ascii\">";
+			float strain_xx = 0;
+			float strain_yy = 0;
+			float strain_xy = 0;
+			of << strain_xx << " " << strain_yy << " " << strain_xy << " ";
+			of << "</DataArray>";
+			of << "</CellData>";
+
+			////////// Polys - connectivity
+			of << "<Polys>";
+			of << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">";
+			for (int i_facevertex = 0; i_facevertex < lv_NeperFace[i_face].i_NumVertex; i_facevertex++)
+			{
+				of << i_facevertex << " ";
+			}
+			of << "</DataArray>";
+
+			////////// Polys - offset
+			of << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">";
+			of << lv_NeperFace[i_face].i_NumVertex;
+			of << "</DataArray>";
+
+			////////// Polys - end
+			of << "</Polys>";
+
+			////////// Piece - end
+			of << "</Piece>\n";
+		}
+		////////// write file ender
+		of << "</PolyData>";
+		of << "</VTKFile>";
+		of.close();
+		cout << "write otblock.vtp successfully ...\n";
+	}
+	else
+	{
+		cout << "[Error-File] cannot open file otblock.vtp !\n";
+	}
+}
+
+
+void NeperDDA::fWriteDDABlock_vtp_2(string str_0)
+{
+	ofstream of;
+	of.open(str_0);
+	if (of.is_open())
+	{
+		////////// Output file head [little endian]
+		of << "<?xml version=\"1.0\"?>";
+		of << "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">";
+		of << "<PolyData>\n";
+		////////// cycle the block list
+		for (int i_face = 0; i_face < i_NumFace; i_face++)
+		{
+			////////// general
+			int iNumBlockNode = lv_NeperFace[i_face].i_NumVertex;
+			of << "<Piece NumberOfPoints=\"" << iNumBlockNode << "\" NumberOfVerts=\"" << 0 << "\"";
+			of << " NumberOfLines=\"" << 0 << "\" NumberOfStrips=\"" << 0 << "\" NumberOfPolys=\"" << 1 << "\">";
+
+			////////// Points - geometry
+			of << "<Points>";
+			of << "<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">";
+			for (int i_facevertex = 0; i_facevertex < lv_NeperFace[i_face].i_NumVertex; i_facevertex++)
+			{
+				of << float(lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[i_facevertex] - 1].x) << " " << float(lv_NeperVertex[lv_NeperFace[i_face].lv_VertexNo[i_facevertex] - 1].y) << " " << 0 << " ";
+			}
+			of << "</DataArray>";
+			of << "</Points>";
+
+			//////////// Point data - block attributes
+			of << "<PointData>";
+			of << "<DataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"2\" format=\"ascii\">";
+			for (int i_facevertex = 0; i_facevertex < lv_NeperFace[i_face].i_NumVertex; i_facevertex++)
+			{
+				float ux = 0;
+				float uy = 0;
+				of << ux << " " << uy << " ";
+			}
+			of << "</DataArray>";
+			of << "</PointData>";
+
+			////////// Cell data - block attribtutes
+			// ID
+			of << "<CellData>";
+			of << "<DataArray type=\"Int32\" Name=\"ID\" format=\"ascii\">";
+			int id = i_face;
+			of << id << " ";
+			of << "</DataArray>";
+			// Material Index
+			of << "<DataArray type=\"Int32\" Name=\"Material_Index\" format=\"ascii\">";
+			int m_index = lv_MaterialIndex[i_face];
+			of << m_index << " ";
+			of << "</DataArray>";
+			// Elastic_Modulus, U(Poisson's Ratio), Density
+			of << "<DataArray type=\"Float32\" Name=\"Density\" format=\"ascii\">";
+			float dens = lv_MaterialType[m_index - 1].D;
+			of << dens << " ";
+			of << "</DataArray>";
+			of << "<DataArray type=\"Float32\" Name=\"Elastic_Modulus\" format=\"ascii\">";
+			float e_m = lv_MaterialType[m_index - 1].E;
+			of << e_m << " ";
+			of << "</DataArray>";
+			of << "<DataArray type=\"Float32\" Name=\"Poisson_Ratio\" format=\"ascii\">";
+			float p_r = lv_MaterialType[m_index - 1].U;
+			of << p_r << " ";
+			of << "</DataArray>";
+			// cohesion, friction_angle
+			of << "<DataArray type=\"Float32\" Name=\"Cohesion\" format=\"ascii\">";
+			float coh = 1E6;
+			of << coh << " ";
+			of << "</DataArray>";
+			of << "<DataArray type=\"Float32\" Name=\"Friction_Angle\" format=\"ascii\">";
+			float f_a = 45;
+			of << f_a << " ";
+			of << "</DataArray>";
+			// initial stress & strain;
 			of << "<DataArray type=\"Float32\" Name=\"Stress\" NumberOfComponents=\"3\" format=\"ascii\">";
 			float stress_xx = 0;
 			float stress_yy = 0;

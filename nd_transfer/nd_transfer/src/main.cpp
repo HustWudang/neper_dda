@@ -38,12 +38,18 @@ int main()
 	cout << "-----\n";
 	std::string sfin_base = fGetFileNamePathStringFromFileInRootPath("filename.txt");
 	std::string sfin_tess = sfin_base + ".tess";
-	std::string sfot_blk_json = sfin_base + "_block.json";
-	std::string sfot_blk_vtp = sfin_base + "_block.vtp";
+	std::string sfin_material_txt = sfin_base + "_material.txt";
+	std::string sfot_blk_json = sfin_base + "_block_1.json";
+	std::string sfot_blk_vtp = sfin_base + "_block_1.vtp";
+	std::string sfot_blk_2_json = sfin_base + "_block_2.json";
+	std::string sfot_blk_2_vtp = sfin_base + "_block_2.vtp";
 	NeperDDA mNeperDDA_1;
 	mNeperDDA_1.fReadNeper_tess(sfin_tess);
+	mNeperDDA_1.fGenerateMaterialIndexFromInputFile(sfin_material_txt);
 	mNeperDDA_1.fWriteDDABlock_json(sfot_blk_json);
 	mNeperDDA_1.fWriteDDABlock_vtp(sfot_blk_vtp);
+	mNeperDDA_1.fWriteDDABlock_json_2(sfot_blk_2_json);
+	mNeperDDA_1.fWriteDDABlock_vtp_2(sfot_blk_2_vtp);
 	// [Main function return].
 	system("pause");
 	return 0;
